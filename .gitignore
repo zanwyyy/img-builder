@@ -1,0 +1,18 @@
+# Binaries
+platform
+*.exe
+*.out
+
+# Build output
+/dist/
+
+# Test cache
+/tmp/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# macOS
+.DS_Store
