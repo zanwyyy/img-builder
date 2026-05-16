@@ -1,34 +1,28 @@
 package main
 
 import (
-	"log"
-
 	"github.com/gin-gonic/gin"
-
-	"github.com/zanwyyy/platform/config"
-	"github.com/zanwyyy/platform/internal/delivery/http/handler"
-	"github.com/zanwyyy/platform/internal/delivery/http/router"
-	memrepo "github.com/zanwyyy/platform/internal/repository/memory"
-	"github.com/zanwyyy/platform/internal/usecase"
+	"github.com/zanwyyy/platform/internal/builder"
+	"github.com/zanwyyy/platform/internal/compiler"
+	"github.com/zanwyyy/platform/internal/deli/http"
+	"github.com/zanwyyy/platform/internal/git"
+	"github.com/zanwyyy/platform/internal/oci"
+	// ... các import khác
 )
 
 func main() {
-	cfg := config.Load()
+	r := gin.Default()
 
-	// Repository layer
-	userRepo := memrepo.NewUserRepository()
+	// Khởi tạo các linh kiện (Dependency Injection)
+	gitClient := &git.Client{}
+	compiler := &compiler.GoCompiler{}
+	ociManager := &oci.Manager{}
+	builderSvc := builder.NewService(gitClient, compiler, ociManager)
 
-	// Use case layer
-	userUC := usecase.NewUserUseCase(userRepo)
+	handler := http.NewHandler(builderSvc)
 
-	// Delivery layer
-	userHandler := handler.NewUserHandler(userUC)
+	// Route để Platform API gọi sang
+	r.POST("/api/v1/build", handler.CreateBuild)
 
-	engine := gin.Default()
-	router.Setup(engine, userHandler)
-
-	log.Printf("Server starting on %s", cfg.ServerAddress)
-	if err := engine.Run(cfg.ServerAddress); err != nil {
-		log.Fatalf("Server failed: %v", err)
-	}
+	r.Run(":8081") // Chạy trên port 8081 để không trùng với API chính (8080)
 }
